@@ -524,32 +524,16 @@ async def execute_tool(
             query_params = arguments.get("query_params")
             body_schema = arguments.get("body_schema")
             
-            # Auto-connect if offline (JIT)
+            # Check if server is connected (no JIT - explicit connect required)
             if server_name not in client_manager.active_clients:
                 server_config = client_manager.server_list.get_server(server_name)
                 if server_config:
-                    try:
-                        logger.info(f"JIT: Auto-connecting to {server_name} for execution")
-                        await client_manager._connect_server(server_config)
-                        # Verify connection succeeded
-                        if server_name not in client_manager.active_clients:
-                            return [types.TextContent(type="text", text=json.dumps({
-                                "error": f"JIT connection to '{server_name}' failed - server not in active clients after connect",
-                                "suggestion": "Check server configuration and logs"
-                            }, indent=2))]
-                        # Fetch and update catalog
-                        client = client_manager.get_client(server_name)
-                        tools = await client.list_tools()
-                        client_manager.catalog.update_server(server_name, tools)
-                    except Exception as jit_err:
-                        logger.error(f"JIT connection failed for {server_name}: {jit_err}")
-                        return [types.TextContent(type="text", text=json.dumps({
-                            "error": f"JIT auto-connect to '{server_name}' failed: {str(jit_err)}",
-                            "traceback": traceback.format_exc(),
-                            "suggestion": "Check server configuration, command, and environment variables"
-                        }, indent=2))]
+                    return [types.TextContent(type="text", text=json.dumps({
+                        "error": f"Server '{server_name}' is not connected",
+                        "suggestion": f"Connect first with: manage_servers.exec {{\"connect\": \"{server_name}\"}}"
+                    }, indent=2))]
                 else:
-                    return [types.TextContent(type="text", text=json.dumps({"error": f"Server {server_name} not configured"}, indent=2))]
+                    return [types.TextContent(type="text", text=json.dumps({"error": f"Server '{server_name}' not configured"}, indent=2))]
 
 
             if not server_name or not action_name:
