@@ -302,7 +302,7 @@ async def execute_tool(
 
                 except KeyError:
                     discovery_result[server_name] = {
-                        "error": f"Server '{server_name}' not found or not connected"
+                        "error": f"Server '{server_name}' not connected. Run: manage_servers.exec {{\"connect\": \"{server_name}\"}}"
                     }
                 except Exception as e:
                     logger.error(f"Error discovering tools for {server_name}: {e}")
@@ -514,7 +514,7 @@ async def execute_tool(
                     }
             except KeyError:
                 result = {
-                    "error": f"Server '{server_name}' not found or not connected"
+                    "error": f"Server '{server_name}' not connected. Run: manage_servers.exec {{\"connect\": \"{server_name}\"}}"
                 }
 
         elif name == TOOL_EXECUTE_ACTION:
@@ -644,7 +644,7 @@ async def execute_tool(
                 result = searcher.search(query, max_results=max_results)
             except KeyError:
                 result = [
-                    {"error": f"Server '{server_name}' not found or not connected"}
+                    {"error": f"Server '{server_name}' not connected. Run: manage_servers.exec {{\"connect\": \"{server_name}\"}}"}
                 ]
             except Exception as e:
                 logger.error(f"Error searching documentation: {str(e)}")

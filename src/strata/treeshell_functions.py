@@ -46,7 +46,18 @@ async def discover_server_actions(user_query: str, server_names: List[str] = Non
                 discovery_result[server_name] = tools
 
         except KeyError:
-            discovery_result[server_name] = {"error": f"Server '{server_name}' not found or not connected"}
+            # Check if configured but not connected vs not configured at all
+            configured_servers = [s.name for s in client_manager.server_list.servers]
+            if server_name in configured_servers:
+                discovery_result[server_name] = {
+                    "error": f"Server '{server_name}' is configured but not connected",
+                    "fix": f"Run: manage_servers.exec {{\"connect\": \"{server_name}\"}}"
+                }
+            else:
+                discovery_result[server_name] = {
+                    "error": f"Server '{server_name}' is not configured",
+                    "fix": "Check ~/.config/strata/servers.json or use manage_servers to see available servers"
+                }
         except Exception as e:
             logger.error(f"Error discovering tools for {server_name}: {e}\n{traceback.format_exc()}")
             discovery_result[server_name] = {"error": str(e), "traceback": traceback.format_exc()}
@@ -77,7 +88,17 @@ async def get_action_details(server_name: str, action_name: str) -> Dict[str, An
         else:
             return {"error": f"Action '{action_name}' not found on server '{server_name}'"}
     except KeyError:
-        return {"error": f"Server '{server_name}' not found or not connected"}
+        configured_servers = [s.name for s in client_manager.server_list.servers]
+        if server_name in configured_servers:
+            return {
+                "error": f"Server '{server_name}' is configured but not connected",
+                "fix": f"Run: manage_servers.exec {{\"connect\": \"{server_name}\"}}"
+            }
+        else:
+            return {
+                "error": f"Server '{server_name}' is not configured",
+                "fix": "Check ~/.config/strata/servers.json or use manage_servers to see available servers"
+            }
     except Exception as e:
         logger.error(f"Error getting action details for {server_name}/{action_name}: {e}\n{traceback.format_exc()}")
         return {"error": str(e), "traceback": traceback.format_exc()}
@@ -359,7 +380,11 @@ async def search_documentation(query: str, server_name: str, max_results: int = 
         searcher = UniversalToolSearcher(tools_map)
         return searcher.search(query, max_results=max_results)
     except KeyError:
-        return [{"error": f"Server '{server_name}' not found or not connected"}]
+        configured_servers = [s.name for s in client_manager.server_list.servers]
+        if server_name in configured_servers:
+            return [{"error": f"Server '{server_name}' is configured but not connected", "fix": f"Run: manage_servers.exec {{\"connect\": \"{server_name}\"}}"}]
+        else:
+            return [{"error": f"Server '{server_name}' is not configured", "fix": "Check ~/.config/strata/servers.json"}]
     except Exception as e:
         logger.error(f"Error searching documentation for {server_name}: {e}\n{traceback.format_exc()}")
         return [{"error": f"Error searching documentation: {str(e)}", "traceback": traceback.format_exc()}]
